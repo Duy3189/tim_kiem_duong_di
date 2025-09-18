@@ -1,14 +1,18 @@
-#hậu lưu bằng cách states[x]=y, nghĩa là hậu ở hàng x và được lưu ở cột y
-# trong đó, states là một list gồm các phần tử
-# Hậu lưu bằng cách states[x] = y
-# nghĩa là: hậu ở hàng x, cột y
+# Luu_duong_di.py
 class DuongDi:
     def __init__(self):
-        self.states = []
+        self.states = []       # tất cả trạng thái duyệt
+        self.final_path = None # nghiệm cuối cùng
         self.index = 0
 
-    def cap_nhat_states(self, states):
+    def cap_nhat_states(self, states, final_path=None):
+        """
+        Cập nhật lại danh sách trạng thái và lời giải cuối.
+        - states: visited_states
+        - final_path: nghiệm cuối cùng (list 8 vị trí hậu)
+        """
         self.states = states
+        self.final_path = final_path
         self.index = 0
 
     def next_state(self):
@@ -21,6 +25,8 @@ class DuongDi:
 
     def get_final_state(self):
         """Trả về trạng thái cuối cùng (lời giải)"""
-        if self.states:
+        if self.final_path:
+            return self.final_path
+        elif self.states:
             return self.states[-1]
         return None

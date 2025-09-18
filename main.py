@@ -2,30 +2,25 @@ import tkinter as tk
 from BFS import bfs
 from DFS import dfs
 from UCS import ucs
+from DLS import DLS
+from IDS import IDS
+from AStar import astar
+from GREEDY import greedy
 from Luu_duong_di import DuongDi
 from chess_ui import Chess
-  
 
-def chay_bfs():
-    states = bfs()
-    if states:
-        storage.cap_nhat_states(states)
-        hien_thi()                 # diễn tiến bên trái
-        hien_thi_ket_qua_ngay()     # kết quả cuối bên phải
 
-def chay_dfs():
-    states = dfs()
-    if states:
-        storage.cap_nhat_states(states)
-        hien_thi()
-        hien_thi_ket_qua_ngay()
+def run_algorithm(algorithm_func):
+    """Chạy thuật toán và hiển thị kết quả"""
+    result = algorithm_func()
 
-def chay_ucs():
-    states = ucs()
-    if states:
-        storage.cap_nhat_states(states)
-        hien_thi()
-        hien_thi_ket_qua_ngay()
+    # Nếu thuật toán trả về (result, visited_states)
+    if isinstance(result, tuple) and len(result) == 2:
+        final_path, states = result
+        storage.cap_nhat_states(states, final_path)
+
+    hien_thi()
+    hien_thi_ket_qua_ngay()
 
 
 def hien_thi():
@@ -33,7 +28,7 @@ def hien_thi():
     state = storage.next_state()
     if state is not None:
         ui.hien_thi_trang_thai_trung_gian(state)
-        root.after(300, hien_thi)   # chạy tiếp sau 0.3s
+        root.after(100, hien_thi)  # chạy tiếp sau 0.1s
 
 
 def hien_thi_ket_qua_ngay():
@@ -45,26 +40,31 @@ def hien_thi_ket_qua_ngay():
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.title("Bài toán 8 quân hậu - BFS, DFS, UCS")
+    root.title("Bài toán 8 quân hậu - BFS, DFS, UCS, DLS")
     root.geometry("1200x800")
 
     # giao diện bàn cờ
     ui = Chess(root)
     storage = DuongDi()
 
-    # nút bấm BFS
-    start_bfs_btn = tk.Button(root, text="Bắt đầu BFS", font=("Arial", 14, "bold"),
-                              command=chay_bfs)
-    start_bfs_btn.grid(row=2, column=0, pady=20)
+    # danh sách nút bấm
+    buttons = [
+        ("Bắt đầu BFS", bfs, 2, 0),
+        ("Bắt đầu DFS", dfs, 2, 1),
+        ("Bắt đầu UCS", ucs, 3, 0),
+        ("Bắt đầu DLS", DLS, 3, 1),
+        ("Bắt đầu IDDFS", IDS, 4, 0),
+        ("Greedy", greedy,4,1),
+        ("A*", astar, 5, 0)
+    ]
 
-    # nút bấm DFS
-    start_dfs_btn = tk.Button(root, text="Bắt đầu DFS", font=("Arial", 14, "bold"),
-                              command=chay_dfs)
-    start_dfs_btn.grid(row=2, column=1, pady=20)
-
-    # nút bấm UCS
-    start_ucs_btn = tk.Button(root, text="Bắt đầu UCS", font=("Arial", 14, "bold"),
-                              command=chay_ucs)
-    start_ucs_btn.grid(row=3, column=0, columnspan=2, pady=20)
+    for text, func, row, col in buttons:
+        btn = tk.Button(
+            root,
+            text=text,
+            font=("Arial", 14, "bold"),
+            command=lambda f=func: run_algorithm(f)
+        )
+        btn.grid(row=row, column=col, pady=20)
 
     root.mainloop()

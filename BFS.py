@@ -1,22 +1,24 @@
-#tạo ra hàm bfs trả về trạng thái tìm được
 from collections import deque
 import kiem_tra_an_toan as at
 
 def bfs():
     queue = deque()          # tạo hàng đợi
     queue.append([])         # trạng thái ban đầu: bàn cờ trống
-    states = []              # lưu toàn bộ trạng thái đã duyệt
+    visited_states = []      # lưu toàn bộ trạng thái đã duyệt
 
     while queue:
         board = queue.popleft()   # lấy trạng thái ra khỏi hàng đợi
-        states.append(board)      # lưu lại
+        visited_states.append(board[:])  # copy để lưu lại an toàn
 
         row = len(board)          # số hàng đã đặt hậu
         if row == 8:              # đủ 8 hàng -> nghiệm
-            return states
+            final_path = board[:] # copy nghiệm
+            return final_path, visited_states
         
-        for col in range(8):      # thử đặt hậu ở tất cả các cột
+        # thử đặt hậu ở tất cả các cột
+        for col in range(8):
             if at.is_safe(board, row, col):
                 queue.append(board + [col])
     
-    return states
+    # nếu không tìm được nghiệm
+    return None, visited_states
