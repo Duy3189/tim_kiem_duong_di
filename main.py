@@ -10,6 +10,9 @@ from GREEDY import greedy
 from Beam_Search import beam_search
 from Hill_Climbing import hill_climbing
 from genetic_algorithm import genetic_algorithm
+from AndOrSearch import and_or_main 
+from Belief_state_search import belief_state_main
+
 
 from Luu_duong_di import DuongDi
 from chess_ui import Chess
@@ -143,6 +146,23 @@ if __name__ == "__main__":
     ]
     for text, func in local_search:
         tk.Button(frame_group3, text=text, font=("Arial", 12),
+                  width=20, height=2,
+                  command=lambda f=func: run_algorithm(f)).pack(pady=3)
+    
+    # --- Nhóm 4: Môi trường không xác định ---
+    btn_group4 = tk.Button(frame_buttons, text="Môi trường không xác định",
+                           font=("Arial", 13, "bold"),
+                           width=25, height=2,
+                           command=lambda: show_only(frame_group4, [frame_group1, frame_group2, frame_group3, frame_group4]))
+    btn_group4.pack(pady=5, fill="x")
+
+    frame_group4 = tk.Frame(frame_buttons)
+    uncertain_env = [
+        ("And-Or Search", and_or_main),
+        ("Belief state search", belief_state_main),
+    ]
+    for text, func in uncertain_env:
+        tk.Button(frame_group4, text=text, font=("Arial", 12),
                   width=20, height=2,
                   command=lambda f=func: run_algorithm(f)).pack(pady=3)
 
