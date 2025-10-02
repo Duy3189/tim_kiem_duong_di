@@ -1,91 +1,143 @@
-import kiem_tra_an_toan as at
+from collections import deque
+from typing import List, Any, Tuple
 
-visited_beliefs = []  # Lưu các belief states đã thăm
-
-class Problem:
+class BeliefStateProblem:
     def __init__(self, n=8):
         self.n = n
-        # initial belief state: có thể bắt đầu từ bất kỳ vị trí nào ở hàng 0
-        self.initial = [[]]  # belief state ban đầu gồm 1 trạng thái rỗng
-
-    def is_goal(self, state):
-        return len(state) == self.n   # đủ 8 quân hậu
-
-    def actions(self, state):
-        """Trả về các cột khả thi cho 1 state"""
-        row = len(state)
-        acts = []
-        for col in range(self.n):
-            if at.is_safe(state, row, col):
-                acts.append(col)
-        return acts
-
-    def results(self, state, action):
-        """Trả về danh sách state mới sau khi áp dụng action"""
-        return [state + [action]]
-
-
-def belief_state_search(problem):
-    # initial belief state: tập hợp các trạng thái hiện tại
-    initial_belief = problem.initial
-    return or_search_belief(problem, initial_belief, [])
-
-
-def or_search_belief(problem, belief_state, path):
-    visited_beliefs.append([s.copy() for s in belief_state])  # lưu copy của belief state
-
-    # goal test: nếu mọi state trong belief state đạt goal
-    if all(problem.is_goal(s) for s in belief_state):
-        return []  # kế hoạch trống khi đạt goal
-
-    # tránh chu trình
-    if belief_state in path:
-        return None
-
-    # thử từng action khả thi (dựa trên tập belief)
-    actions_set = set()
-    for s in belief_state:
-        actions_set.update(problem.actions(s))
-    actions_list = list(actions_set)
-
-    for action in actions_list:
-        # áp dụng action cho tất cả các state trong belief
+    
+    def generate_initial_belief(self) -> List[List[int]]:
+        """Tạo belief state ban đầu"""
+        return [[col] for col in range(self.n)]
+    
+    def is_goal(self, belief_state: List[List[int]]) -> bool:
+        """Kiểm tra belief state có thỏa mãn điều kiện đích không"""
+        if not belief_state:
+            return False
+        for state in belief_state:
+            if len(state) != self.n or not self.is_valid_solution(state):
+                return False
+        return True
+    
+    def is_valid_solution(self, state: List[int]) -> bool:
+        """Kiểm tra state có phải là nghiệm hợp lệ"""
+        n = len(state)
+        for i in range(n):
+            for j in range(i + 1, n):
+                if state[i] == state[j] or abs(state[i] - state[j]) == abs(i - j):
+                    return False
+        return True
+    
+    def is_safe(self, state: List[int], row: int, col: int) -> bool:
+        """Kiểm tra đặt hậu tại (row, col) có an toàn không"""
+        for r, c in enumerate(state):
+            if c == col or abs(c - col) == abs(r - row):
+                return False
+        return True
+    
+    def actions(self, belief_state: List[List[int]]) -> List[int]:
+        """Lấy tất cả hành động có thể từ belief state"""
+        if not belief_state:
+            return []
+        
+        row = len(belief_state[0])
+        if row >= self.n:
+            return []
+        
+        all_actions = set()
+        for state in belief_state:
+            for col in range(self.n):
+                if self.is_safe(state, row, col):
+                    all_actions.add(col)
+        return list(all_actions)
+    
+    def result(self, belief_state: List[List[int]], action: int) -> List[List[int]]:
+        """Áp dụng hành động lên belief state"""
         new_belief = []
-        for s in belief_state:
-            results = problem.results(s, action)
-            new_belief.extend(results)
-        plan = and_search_belief(problem, new_belief, path + [belief_state])
-        if plan is not None:
-            return [(action, plan)]
-    return None
+        row = len(belief_state[0]) if belief_state else 0
+        
+        for state in belief_state:
+            if self.is_safe(state, row, action):
+                new_state = state + [action]
+                new_belief.append(new_state)
+        
+        return new_belief
+    
+    def belief_equal(self, belief1: List[List[int]], belief2: List[List[int]]) -> bool:
+        """So sánh hai belief state có bằng nhau không"""
+        if len(belief1) != len(belief2):
+            return False
+        set1 = set(tuple(state) for state in belief1)
+        set2 = set(tuple(state) for state in belief2)
+        return set1 == set2
 
-
-def and_search_belief(problem, belief_states, path):
-    plan_dict = {}
-    for s in belief_states:
-        plan_s = or_search_belief(problem, [s], path)
-        if plan_s is None:
-            return None
-        plan_dict[tuple(s)] = plan_s
-    return plan_dict
-
-
-def belief_state_main():
-    """Hàm gọi chính để tích hợp UI"""
-    global visited_beliefs
-    visited_beliefs = []  # reset
-
-    problem = Problem(8)
-    plan = belief_state_search(problem)
-
-    # tìm state cuối cùng đạt goal
-    final_state = None
-    for belief in visited_beliefs:
-        for s in belief:
-            if len(s) == problem.n:
-                final_state = s
-                break
-        if final_state:
+def belief_state_bfs_search(problem: BeliefStateProblem) -> Tuple[List[List[int]], List[List[List[int]]]]:
+    """Thực hiện BFS trên không gian belief states"""
+    visited_beliefs = []
+    frontier = deque([(problem.generate_initial_belief(), [])])
+    solutions = []
+    
+    while frontier:
+        current_belief, path = frontier.popleft()
+        visited_beliefs.append(current_belief)
+        
+        # Kiểm tra điều kiện đích
+        if problem.is_goal(current_belief):
+            for state in current_belief:
+                if problem.is_valid_solution(state):
+                    solutions.append(state)
             break
+        
+        # Lấy tất cả hành động có thể
+        possible_actions = problem.actions(current_belief)
+        
+        for action in possible_actions:
+            new_belief = problem.result(current_belief, action)
+            if new_belief:
+                new_path = path + [action]
+                # Kiểm tra belief state mới chưa được visited
+                is_visited = False
+                for visited in visited_beliefs:
+                    if problem.belief_equal(new_belief, visited):
+                        is_visited = True
+                        break
+                
+                if not is_visited:
+                    frontier.append((new_belief, new_path))
+    
+    return solutions, visited_beliefs
 
-    return final_state, visited_beliefs
+def belief_state_main(n=8):
+    """Hàm chính cho Belief State Search"""
+    try:
+        problem = BeliefStateProblem(n)
+        solutions, visited_beliefs = belief_state_bfs_search(problem)
+        
+        if solutions:
+            final_solution = solutions[0]
+            
+            # Tạo danh sách states để hiển thị
+            display_states = []
+            
+            # Lấy representative state từ mỗi belief
+            for belief in visited_beliefs:
+                if belief:
+                    # Thêm các state từ belief
+                    for state in belief:
+                        for i in range(1, len(state) + 1):
+                            partial = state[:i]
+                            if partial not in display_states:
+                                display_states.append(partial)
+            
+            # Đảm bảo final solution có trong display_states
+            if final_solution not in display_states:
+                display_states.append(final_solution)
+                
+            print(f"Belief State Search: Tìm thấy {len(solutions)} nghiệm")
+            return final_solution, display_states
+        else:
+            print("Belief State Search: Không tìm thấy nghiệm")
+            return [], []
+            
+    except Exception as e:
+        print(f"Lỗi trong Belief State Search: {e}")
+        return [], []
